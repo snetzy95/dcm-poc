@@ -2,6 +2,11 @@
 
 > **Shell note:** Every command in this guide runs in **Windows CMD** (`cmd.exe`) unless
 > a section is explicitly labelled "Git Bash only". No bash, no PowerShell needed.
+>
+> **CMD placeholder rule:** Anywhere you see `<SOME_VALUE>` you MUST replace the entire
+> `<SOME_VALUE>` token (including the angle brackets) with the real value before pressing Enter.
+> In CMD the `<` and `>` characters are I/O redirection operators — leaving them in the command
+> will cause a "The system cannot find the file specified" error.
 
 ---
 
@@ -181,13 +186,17 @@ The stack uses polling by default. To simulate a webhook event manually, first g
 curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])"
 ```
 
-Copy the printed ID, then send the webhook (replace `<ORTHANC_ID>`):
+Copy the printed ID, then send the webhook — paste the real ID in place of the angle-bracket placeholder.
 
+> **CMD warning:** `<` and `>` are redirection operators in CMD. You MUST replace `<ORTHANC_ID>`
+> with the actual value (e.g. `ea825ff5-6acaf08d-fa0bb01e-850fb445-d8772491`) before running.
+
+Example (substitute your real orthanc_id):
 ```cmd
-curl -X POST http://localhost:8001/webhook/orthanc -H "Content-Type: application/json" -d "{\"ChangeType\":\"StableStudy\",\"ID\":\"<ORTHANC_ID>\",\"Path\":\"/studies/<ORTHANC_ID>\",\"ResourceType\":\"Study\",\"Date\":\"20230615T120000\"}"
+curl -X POST http://localhost:8001/webhook/orthanc -H "Content-Type: application/json" -d "{\"ChangeType\":\"StableStudy\",\"ID\":\"ea825ff5-6acaf08d-fa0bb01e-850fb445-d8772491\",\"Path\":\"/studies/ea825ff5-6acaf08d-fa0bb01e-850fb445-d8772491\",\"ResourceType\":\"Study\",\"Date\":\"20230615T120000\"}"
 ```
 
-Expected response: `{"received":"StableStudy","id":"<ORTHANC_ID>"}`
+Expected response: `{"received":"StableStudy","id":"ea825ff5-..."}`
 
 ---
 
@@ -197,8 +206,11 @@ Expected response: `{"received":"StableStudy","id":"<ORTHANC_ID>"}`
 
 **Via API — create:**
 ```cmd
-curl -X POST http://localhost:8002/cohort-definitions -H "Content-Type: application/json" -d "{\"cohort_definition_name\":\"CT Studies 2023\",\"filters\":{\"modalities\":[\"CT\"],\"study_date_from\":\"2023-01-01\",\"study_date_to\":\"2023-12-31\"},\"orthanc_tags\":[]}"
+curl -X POST http://localhost:8002/cohort-definitions -H "Content-Type: application/json" -d "{\"cohort_definition_name\":\"CT Studies\",\"filters\":{\"modalities\":[\"CT\"]},\"orthanc_tags\":[]}"
 ```
+
+> **Note:** Do NOT add `study_date_from`/`study_date_to` here — studies uploaded via the test DICOM
+> generator have `StudyDate=20260101` or null, so a 2023 date range would match zero studies.
 
 **List:**
 ```cmd
@@ -237,7 +249,7 @@ curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.l
 ```cmd
 curl "http://localhost:8042/studies/<ORTHANC_STUDY_ID>/labels"
 ```
-Expected: `["cohort:<uuid>"]`
+Expected: `["cohort_<uuid>"]` (underscore, not colon — Orthanc label format requirement)
 
 **DB check:**
 ```cmd

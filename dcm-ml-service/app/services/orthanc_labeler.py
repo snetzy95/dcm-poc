@@ -17,7 +17,8 @@ def _make_client() -> httpx.AsyncClient:
 
 
 def _label(cohort_id: UUID) -> str:
-    return f"cohort:{cohort_id}"
+    # Orthanc labels only allow alphanumeric, '_' and '-' characters (no ':')
+    return f"cohort_{cohort_id}"
 
 
 async def add_cohort_label(orthanc_study_id: str, cohort_id: UUID) -> None:
@@ -43,9 +44,9 @@ async def get_cohort_members_from_orthanc(cohort_id: UUID) -> list[str]:
     async with _make_client() as client:
         r = await client.post("/tools/find", json={
             "Level": "Study",
+            "Query": {},
             "Labels": [_label(cohort_id)],
             "LabelsConstraint": "All",
-            "Expand": False,
         })
         if r.status_code != 200:
             logger.warning("Orthanc /tools/find failed: HTTP %s", r.status_code)

@@ -16,7 +16,7 @@ async def test_add_cohort_label_success():
     from app.services.orthanc_labeler import add_cohort_label
 
     with respx.mock(base_url="http://localhost:8042") as mock_orthanc:
-        label = f"cohort:{COHORT_ID}"
+        label = f"cohort_{COHORT_ID}"
         mock_orthanc.put(f"/studies/{ORTHANC_STUDY_ID}/labels/{label}").mock(
             return_value=httpx.Response(200)
         )
@@ -36,7 +36,7 @@ async def test_add_cohort_label_logs_warning_on_failure():
     import logging
 
     with respx.mock(base_url="http://localhost:8042") as mock_orthanc:
-        label = f"cohort:{COHORT_ID}"
+        label = f"cohort_{COHORT_ID}"
         mock_orthanc.put(f"/studies/{ORTHANC_STUDY_ID}/labels/{label}").mock(
             return_value=httpx.Response(500)
         )
@@ -55,7 +55,7 @@ async def test_remove_cohort_label_success():
     from app.services.orthanc_labeler import remove_cohort_label
 
     with respx.mock(base_url="http://localhost:8042") as mock_orthanc:
-        label = f"cohort:{COHORT_ID}"
+        label = f"cohort_{COHORT_ID}"
         mock_orthanc.delete(f"/studies/{ORTHANC_STUDY_ID}/labels/{label}").mock(
             return_value=httpx.Response(200)
         )
@@ -74,7 +74,7 @@ async def test_remove_cohort_label_404_is_silent():
     from app.services.orthanc_labeler import remove_cohort_label
 
     with respx.mock(base_url="http://localhost:8042") as mock_orthanc:
-        label = f"cohort:{COHORT_ID}"
+        label = f"cohort_{COHORT_ID}"
         mock_orthanc.delete(f"/studies/{ORTHANC_STUDY_ID}/labels/{label}").mock(
             return_value=httpx.Response(404)
         )
@@ -147,7 +147,7 @@ async def test_store_cohort_tags_as_metadata():
 
 
 def test_label_format():
-    """_label should produce 'cohort:<uuid>' string."""
+    """_label should produce 'cohort_<uuid>' string (underscore, Orthanc-safe)."""
     from app.services.orthanc_labeler import _label
     cid = uuid4()
-    assert _label(cid) == f"cohort:{cid}"
+    assert _label(cid) == f"cohort_{cid}"
