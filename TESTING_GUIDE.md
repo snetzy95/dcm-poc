@@ -239,13 +239,20 @@ Replace `<COHORT_ID>` with the UUID from Feature 6.
 curl -X POST "http://localhost:8002/cohort-definitions/<COHORT_ID>/resolve"
 ```
 
-**Get the Orthanc study ID for label verification:**
-```cmd
-curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])"
-```
-> Copy the printed value as `<ORTHANC_STUDY_ID>`.
+**Get the Orthanc study ID of a resolved cohort member for label verification:**
 
-**Check labels on the study (replace `<ORTHANC_STUDY_ID>`):**
+The resolve response above contains a `study_uids` list. Cross-reference it with the core API to get the matching `orthanc_id`:
+```cmd
+curl -s "http://localhost:8002/cohorts/<COHORT_ID>/orthanc"
+```
+> This returns the list of Orthanc study IDs that are actually in the cohort.
+> Copy the **first value** from that list as `<ORTHANC_STUDY_ID>`.
+
+> **Why not use `items[0]` from `/studies`?** That endpoint returns studies sorted by ingestion
+> time, so `items[0]` may be a study with a different modality (e.g. MR) that is not part of
+> your CT cohort. Always use the cohort members list to pick the right study for label checks.
+
+**Check labels on the resolved study (replace `<ORTHANC_STUDY_ID>`):**
 ```cmd
 curl "http://localhost:8042/studies/<ORTHANC_STUDY_ID>/labels"
 ```
@@ -265,7 +272,7 @@ curl "http://localhost:8002/cohorts/<COHORT_ID>/orthanc"
 
 ### Feature 8 — Cohort Update & Delete
 
-Replace `<COHORT_ID>` and `<ORTHANC_STUDY_ID>` with real values.
+Replace `<COHORT_ID>` with the UUID from Feature 6, and `<ORTHANC_STUDY_ID>` with a cohort member Orthanc ID from the `/cohorts/<COHORT_ID>/orthanc` list (NOT `items[0]` from `/studies`).
 
 **Rename:**
 ```cmd
@@ -361,10 +368,15 @@ Copy both values as `<ORTHANC_STUDY_ID>` and `<STUDY_UID>`.
 curl -X DELETE "http://localhost:8042/studies/<ORTHANC_STUDY_ID>"
 ```
 
-**Step 3 — wait ~35 seconds, then check:**
+**Step 3 — wait the full 35 seconds, then check:**
+
+> The reconciliation runs every ~30 s. If you check too early you will see `deleted_at: None`
+> even though the study was deleted from Orthanc. Wait for the count to drop by 1.
+
 ```cmd
 curl -s "http://localhost:8001/studies?include_deleted=true" | python -c "import sys,json; d=json.load(sys.stdin); [print(s['study_uid'], s['deleted_at']) for s in d['items']]"
 ```
+The deleted study's `deleted_at` will change from `None` to a timestamp once reconciliation runs.
 
 **Verify it is hidden from the default list:**
 ```cmd
