@@ -46,11 +46,6 @@ services:
       - "8042:8042"
       - "4242:4242"
     networks: [dcm-net]
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8042/system || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   dcm-core-service:
     build: ./dcm-core-service
@@ -58,7 +53,7 @@ services:
       postgres:
         condition: service_healthy
       orthanc:
-        condition: service_healthy
+        condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://dcm:dcmpassword@postgres:5432/dcmdb
       ORTHANC_URL: http://orthanc:8042
@@ -69,7 +64,7 @@ services:
       - "8001:8001"
     networks: [dcm-net]
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8001/health || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\" 2>/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
