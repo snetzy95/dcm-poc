@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..models import Study, Series, Instance
 
@@ -12,7 +13,11 @@ logger = logging.getLogger(__name__)
 
 async def soft_delete_study(orthanc_study_id: str, db: AsyncSession) -> None:
     """Mark a study and all its series/instances as deleted."""
-    result = await db.execute(select(Study).where(Study.orthanc_id == orthanc_study_id))
+    result = await db.execute(
+        select(Study)
+        .where(Study.orthanc_id == orthanc_study_id)
+        .options(selectinload(Study.series).selectinload(Series.instances))
+    )
     study = result.scalar_one_or_none()
 
     if study is None:

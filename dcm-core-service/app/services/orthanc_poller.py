@@ -11,7 +11,7 @@ from . import orthanc_client
 from .metadata_ingester import ingest_study
 from .delete_handler import soft_delete_study
 from ..database import AsyncSessionLocal
-from ..models import PollerState
+from ..models import PollerState, Study
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ POLLER_LAST_SEQ = Gauge("dcm_poller_last_seq", "Last Orthanc change sequence pro
 POLLER_LAG = Gauge("dcm_poller_lag_seconds", "Seconds since last successful poll")
 
 _HANDLED_TYPES = {"StableStudy", "DeletedStudy"}
+_RECONCILE_EVERY = 6  # reconcile every N poll cycles (~30s at 5s interval)
 
 
 async def _get_last_seq(db: AsyncSession) -> int:
@@ -51,6 +52,36 @@ async def _dispatch(change: dict, db: AsyncSession) -> None:
         STUDIES_DELETED.inc()
 
 
+async def _reconcile_deletions() -> None:
+    """Detect studies deleted from Orthanc that were missed by the change log.
+
+    The orthancteam/orthanc PostgreSQL plugin does not always emit DeletedStudy
+    change events. This reconciliation fetches the current study list from Orthanc
+    and soft-deletes any DB studies whose orthanc_id is no longer present.
+    """
+    try:
+        orthanc_ids: list = await orthanc_client.get("/studies")
+        orthanc_set = set(orthanc_ids)
+    except Exception as exc:
+        logger.warning("Reconcile: could not fetch Orthanc studies: %s", exc)
+        return
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Study).where(Study.deleted_at.is_(None))
+        )
+        live_studies = result.scalars().all()
+
+        for study in live_studies:
+            if study.orthanc_id not in orthanc_set:
+                logger.info(
+                    "Reconcile: study %s (orthanc_id=%s) missing from Orthanc — soft-deleting",
+                    study.study_uid, study.orthanc_id,
+                )
+                await soft_delete_study(study.orthanc_id, db)
+                STUDIES_DELETED.inc()
+
+
 async def start_poller(poll_interval: int = 5) -> None:
     """Main polling loop. Runs forever as a background asyncio task."""
     logger.info("Orthanc change poller starting (interval=%ss)", poll_interval)
@@ -61,6 +92,7 @@ async def start_poller(poll_interval: int = 5) -> None:
     logger.info("Resuming from Orthanc change sequence %d", seq)
 
     last_successful_poll = _time.monotonic()
+    _cycle = 0
 
     while True:
         try:
@@ -81,6 +113,9 @@ async def start_poller(poll_interval: int = 5) -> None:
                 POLLER_LAST_SEQ.set(seq)
 
             if changes.get("Done"):
+                _cycle += 1
+                if _cycle % _RECONCILE_EVERY == 0:
+                    await _reconcile_deletions()
                 await asyncio.sleep(poll_interval)
         except asyncio.CancelledError:
             logger.info("Poller cancelled — shutting down")
