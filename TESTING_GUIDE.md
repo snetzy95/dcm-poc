@@ -1,46 +1,25 @@
 # DCM PoC — Testing Guide
 
+> **Shell note:** Every command in this guide runs in **Windows CMD** (`cmd.exe`) unless
+> a section is explicitly labelled "Git Bash only". No bash, no PowerShell needed.
+
 ---
 
 ## 1. Unit Tests
 
-### Run — dcm-core-service
-
-```bash
-cd dcm-poc/dcm-core-service
-
-# Install dependencies (once)
+```cmd
+cd dcm-poc\dcm-core-service
 pip install -r requirements.txt
-
-# Run all unit tests
-pytest
-
-# Run with verbose output
 pytest -v
-
-# Run a specific test file
-pytest tests/test_webhook_api.py -v
-pytest tests/test_orthanc_poller.py -v
-pytest tests/test_parse_helpers.py -v
-pytest tests/test_studies_api_filters.py -v
 ```
 
-### Run — dcm-ml-service
-
-```bash
-cd dcm-poc/dcm-ml-service
-
+```cmd
+cd dcm-poc\dcm-ml-service
 pip install -r requirements.txt
-
-pytest
-
 pytest -v
-
-pytest tests/test_orthanc_labeler.py -v
-pytest tests/test_federated_coordinator.py -v
-pytest tests/test_jobs_api_extended.py -v
-pytest tests/test_cohorts_api_extended.py -v
 ```
+
+**Expected:** `dcm-core-service` 44 passed · `dcm-ml-service` 54 passed
 
 ### Test files summary
 
@@ -55,8 +34,6 @@ pytest tests/test_cohorts_api_extended.py -v
 | ml | `test_jobs_api_extended.py` | submit result (happy/conflict/not-found), list, aggregate → DONE |
 | ml | `test_cohorts_api_extended.py` | update, delete (label cleanup), members list/delete, resolve multi |
 
-**Expected results:** `dcm-core-service` 44 passed · `dcm-ml-service` 54 passed
-
 ---
 
 ## 2. Deployment Stack
@@ -68,9 +45,8 @@ pytest tests/test_cohorts_api_extended.py -v
 
 ### Start the full stack
 
-```bash
+```cmd
 cd dcm-poc
-
 docker compose up --build -d
 ```
 
@@ -78,32 +54,24 @@ docker compose up --build -d
 
 ### Watch logs
 
-```bash
-# All services
+```cmd
 docker compose logs -f
-
-# Specific service
 docker compose logs -f dcm-core-service
 docker compose logs -f orthanc
 ```
 
 ### Check health
 
-```bash
-curl http://localhost:8001/health   # {"status":"ok","service":"dcm-core-service"}
-curl http://localhost:8002/health   # {"status":"ok","service":"dcm-ml-service"}
-curl http://localhost:8042/system   # Orthanc system info JSON
+```cmd
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+curl http://localhost:8042/system
 ```
 
-### Stop the stack
+### Stop / reset
 
-```bash
+```cmd
 docker compose down
-```
-
-### Full reset (wipe data volumes)
-
-```bash
 docker compose down -v
 ```
 
@@ -114,7 +82,7 @@ docker compose down -v
 | Service | URL | Credentials |
 |---|---|---|
 | **SPA (React)** | http://localhost:3000 | — |
-| **Orthanc REST API** | http://localhost:8042 | No auth (AuthenticationEnabled: false) |
+| **Orthanc REST API** | http://localhost:8042 | No auth |
 | **Orthanc DICOM** | localhost:4242 | No auth |
 | **DCM Core API** | http://localhost:8001 | — |
 | **DCM ML API** | http://localhost:8002 | — |
@@ -128,83 +96,36 @@ docker compose down -v
 
 ### Get a sample DICOM file
 
-The easiest way is to generate one with Python (works on any OS without external downloads):
+Generate one with Python (each run produces unique UIDs — required by Orthanc):
 
-```bash
-python -c "
-import pydicom, time
-from pydicom.dataset import FileDataset
-from pydicom.uid import generate_uid
-import pydicom.uid
-
-filename = 'test.dcm'
-sop_uid = generate_uid()
-file_meta = pydicom.dataset.FileMetaDataset()
-file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'
-file_meta.MediaStorageSOPInstanceUID = sop_uid
-file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
-
-ds = FileDataset(filename, {}, file_meta=file_meta, preamble=b'\x00'*128)
-ds.is_implicit_VR = False; ds.is_little_endian = True
-ds.PatientName = 'Test^Patient'; ds.PatientID = 'TEST001'; ds.PatientSex = 'M'
-ds.StudyDate = '20240101'; ds.StudyTime = '120000'
-ds.StudyInstanceUID = generate_uid(); ds.SeriesInstanceUID = generate_uid()
-ds.SOPInstanceUID = sop_uid; ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
-ds.Modality = 'CT'; ds.InstitutionName = 'TestHospital'
-ds.StudyDescription = 'Test Study'; ds.SeriesNumber = '1'; ds.InstanceNumber = '1'
-ds.Rows = 16; ds.Columns = 16; ds.BitsAllocated = 8; ds.BitsStored = 8
-ds.HighBit = 7; ds.PixelRepresentation = 0; ds.SamplesPerPixel = 1
-ds.PhotometricInterpretation = 'MONOCHROME2'; ds.PixelData = bytes(256)
-pydicom.dcmwrite(filename, ds)
-print('Created test.dcm')
-"
+```cmd
+python -c "import pydicom,time; from pydicom.dataset import FileDataset; from pydicom.uid import generate_uid; import pydicom.uid; sop=generate_uid(); m=pydicom.dataset.FileMetaDataset(); m.MediaStorageSOPClassUID='1.2.840.10008.5.1.4.1.1.2'; m.MediaStorageSOPInstanceUID=sop; m.TransferSyntaxUID=pydicom.uid.ExplicitVRLittleEndian; ds=FileDataset('test.dcm',{},file_meta=m,preamble=b'\x00'*128); ds.is_implicit_VR=False; ds.is_little_endian=True; ts=str(int(time.time())); ds.PatientName='Test^'+ts; ds.PatientID='T'+ts; ds.PatientSex='M'; ds.StudyDate='20260101'; ds.StudyTime='120000'; ds.StudyInstanceUID=generate_uid(); ds.SeriesInstanceUID=generate_uid(); ds.SOPInstanceUID=sop; ds.SOPClassUID=m.MediaStorageSOPClassUID; ds.Modality='CT'; ds.InstitutionName='TestHospital'; ds.StudyDescription='Test'; ds.SeriesNumber='1'; ds.InstanceNumber='1'; ds.Rows=8; ds.Columns=8; ds.BitsAllocated=8; ds.BitsStored=8; ds.HighBit=7; ds.PixelRepresentation=0; ds.SamplesPerPixel=1; ds.PhotometricInterpretation='MONOCHROME2'; ds.PixelData=bytes(64); pydicom.dcmwrite('test.dcm',ds); print('Created test.dcm')"
 ```
-
-> **Note on Python:** On Windows use `python`, on Linux/Mac use `python3`.
-> On Windows CMD, multiline commands need `^` line continuation or use Git Bash.
 
 ---
 
 ### Feature 1 — DICOM Upload & Automatic Ingestion
 
-**Goal:** Upload a DICOM file to Orthanc → core-service auto-ingests it → visible in SPA.
+**Goal:** Upload a DICOM file → core-service ingests it → visible in SPA.
 
-#### Steps
+1. Open **http://localhost:3000/upload** — drag-and-drop `test.dcm`.
+2. Expect green message: `Instance ID: <some-id>`.
 
-1. Open **http://localhost:3000/upload** in a browser.
-2. Drag-and-drop `test.dcm` onto the upload zone, or click to select.
-3. Expect green message: `Instance ID: <some-id>`.
-
-**Alternative — direct curl upload:**
-```bash
-curl -X POST http://localhost:8042/instances \
-  -H "Content-Type: application/dicom" \
-  --data-binary @test.dcm
+**Or upload via curl:**
+```cmd
+curl -X POST http://localhost:8042/instances -H "Content-Type: application/dicom" --data-binary @test.dcm
 ```
 
-4. Wait **~75 seconds** for Orthanc to emit a `StableStudy` event and the poller to process it.
-5. Open **http://localhost:3000** (Studies page) — the study should appear in the table.
+3. **Wait ~75 seconds.** Orthanc waits ~60 s before emitting `StableStudy`; the poller picks it up within 5 s.
+4. Open **http://localhost:3000** — the study should appear.
 
-> **Why 75 seconds?** Orthanc waits ~60 s after the last upload before marking a study as
-> "stable" and emitting the `StableStudy` change event. The poller then picks it up within 5 s.
-
-**DB verification — Git Bash / Linux / Mac:**
-```bash
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT study_uid, patient_name, study_date, num_series, num_instances, ingested_at FROM studies ORDER BY ingested_at DESC LIMIT 5;"
-```
-
-**DB verification — Windows CMD:**
+**DB check:**
 ```cmd
 docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT study_uid, patient_name, study_date, num_series, num_instances, ingested_at FROM studies ORDER BY ingested_at DESC LIMIT 5;"
 ```
 
-**API verification:**
-```bash
-# Git Bash / Linux / Mac
-curl -s http://localhost:8001/studies | python -m json.tool
-
-# Windows CMD
+**API check:**
+```cmd
 curl -s http://localhost:8001/studies | python -m json.tool
 ```
 
@@ -212,334 +133,260 @@ curl -s http://localhost:8001/studies | python -m json.tool
 
 ### Feature 2 — Studies API Filtering
 
-**Goal:** Confirm that filter parameters narrow results.
-
-```bash
-# Filter by modality (e.g. CT)
+```cmd
 curl "http://localhost:8001/studies?modality=CT"
-
-# Filter by sex
 curl "http://localhost:8001/studies?patient_sex=M"
-
-# Filter by institution name (partial match)
 curl "http://localhost:8001/studies?institution_name=Hospital"
-
-# Filter by date range
 curl "http://localhost:8001/studies?study_date_from=2020-01-01&study_date_to=2025-12-31"
-
-# Paginate
 curl "http://localhost:8001/studies?page=1&page_size=5"
 ```
 
-**SPA check:**
-- Open http://localhost:3000
-- Use the filter inputs (Modality, Sex, Date From/To, Institution)
-- Verify the table updates with each filter change
+**SPA:** Open http://localhost:3000 and use the filter inputs.
 
 ---
 
 ### Feature 3 — Study Detail with Series & Instances
 
-**Get full study detail (Git Bash / Linux / Mac):**
-```bash
-STUDY_UID=$(curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['study_uid'])")
-
-curl -s "http://localhost:8001/studies/${STUDY_UID}" | python -m json.tool
-```
-
-**Get full study detail (Windows CMD):**
+Step 1 — get a study UID:
 ```cmd
 curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['study_uid'])"
-rem Copy the printed UID, then:
-curl -s "http://localhost:8001/studies/<STUDY_UID>" | python -m json.tool
 ```
 
-Expected: Response includes `series[]` array with `instances[]` nested inside each series.
+Step 2 — copy the printed UID, then query the detail (replace `<UID>` with the value):
+```cmd
+curl -s "http://localhost:8001/studies/<UID>" | python -m json.tool
+```
+
+Expected: response contains `series[]` with `instances[]` nested inside.
 
 ---
 
-### Feature 4 — Orthanc Viewer (DICOM Viewer)
+### Feature 4 — Orthanc Viewer
 
-**Goal:** View uploaded images in Orthanc's built-in viewer.
+1. Open http://localhost:8042/ui/app/
+2. Find the study → click a series → click **Preview** or **OHIF**.
 
-1. Open http://localhost:8042/ui/app/ in a browser.
-2. You should see the study listed under "Studies" in the Orthanc Explorer.
-3. Click the study → click a series → click "Preview" or "OHIF" to view images.
-
-**DB check — Orthanc stores index in PG:**
-```bash
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'Instance%' OR tablename LIKE 'Study%' LIMIT 20;"
+**DB check (Orthanc schema tables):**
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT tablename FROM pg_tables WHERE schemaname='public' LIMIT 30;"
 ```
 
 ---
 
-### Feature 5 — Webhook (Optional — Orthanc Change Events via HTTP Push)
+### Feature 5 — Webhook (Optional)
 
-The stack uses polling by default. To test the webhook path directly:
+The stack uses polling by default. To simulate a webhook event manually, first get an Orthanc ID:
 
-```bash
-# Simulate a StableStudy event (Git Bash / Linux / Mac)
-ORTHANC_ID=$(curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; d=json.load(sys.stdin); print(d['items'][0]['orthanc_id'] if d['items'] else 'missing')")
-
-curl -X POST http://localhost:8001/webhook/orthanc \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"ChangeType\": \"StableStudy\",
-    \"ID\": \"${ORTHANC_ID}\",
-    \"Path\": \"/studies/${ORTHANC_ID}\",
-    \"ResourceType\": \"Study\",
-    \"Date\": \"20230615T120000\"
-  }"
+```cmd
+curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])"
 ```
 
-Expected: `{"received":"StableStudy","id":"<id>"}` — 200 response.
+Copy the printed ID, then send the webhook (replace `<ORTHANC_ID>`):
+
+```cmd
+curl -X POST http://localhost:8001/webhook/orthanc -H "Content-Type: application/json" -d "{\"ChangeType\":\"StableStudy\",\"ID\":\"<ORTHANC_ID>\",\"Path\":\"/studies/<ORTHANC_ID>\",\"ResourceType\":\"Study\",\"Date\":\"20230615T120000\"}"
+```
+
+Expected response: `{"received":"StableStudy","id":"<ORTHANC_ID>"}`
 
 ---
 
 ### Feature 6 — Cohort Definition (Create & List)
 
-**Via SPA:**
-1. Open http://localhost:3000/cohorts
-2. Click **"+ New Cohort"**
-3. Enter a name, optionally set filters (e.g. Modality = CT)
-4. Click **"Create"**
-5. The new cohort appears in the left sidebar
+**Via SPA:** http://localhost:3000/cohorts → **+ New Cohort**
 
-**Via API:**
-```bash
-curl -X POST http://localhost:8002/cohort-definitions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cohort_definition_name": "CT Studies 2023",
-    "filters": {
-      "modalities": ["CT"],
-      "study_date_from": "2023-01-01",
-      "study_date_to": "2023-12-31"
-    },
-    "orthanc_tags": []
-  }'
+**Via API — create:**
+```cmd
+curl -X POST http://localhost:8002/cohort-definitions -H "Content-Type: application/json" -d "{\"cohort_definition_name\":\"CT Studies 2023\",\"filters\":{\"modalities\":[\"CT\"],\"study_date_from\":\"2023-01-01\",\"study_date_to\":\"2023-12-31\"},\"orthanc_tags\":[]}"
 ```
 
-**List all cohort definitions:**
-```bash
+**List:**
+```cmd
 curl -s http://localhost:8002/cohort-definitions | python -m json.tool
 ```
 
+Get and store a cohort ID for the next steps:
+```cmd
+curl -s http://localhost:8002/cohort-definitions | python -c "import sys,json; print(json.load(sys.stdin)[0]['cohort_definition_id'])"
+```
+> Copy the printed UUID — you will need it as `<COHORT_ID>` below.
+
 **DB check:**
-```bash
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT cohort_definition_id, cohort_definition_name, filters FROM cohort_definition;"
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT cohort_definition_id, cohort_definition_name, filters FROM cohort_definition;"
 ```
 
 ---
 
 ### Feature 7 — Cohort Resolution & Orthanc Labeling
 
-**Via SPA:**
-1. Open http://localhost:3000/cohorts
-2. Select a cohort from the left sidebar
-3. Click **"Resolve Cohort"**
-4. A green banner shows: `X studies matched and labeled in Orthanc`
-5. The Members section shows the matched study UIDs
+Replace `<COHORT_ID>` with the UUID from Feature 6.
 
-**Via API (get the cohort ID first):**
-```bash
-COHORT_ID=$(curl -s http://localhost:8002/cohort-definitions | \
-  python -c "import sys,json; print(json.load(sys.stdin)[0]['cohort_definition_id'])")
-
-curl -X POST "http://localhost:8002/cohort-definitions/${COHORT_ID}/resolve"
+**Resolve (via API):**
+```cmd
+curl -X POST "http://localhost:8002/cohort-definitions/<COHORT_ID>/resolve"
 ```
 
-**Verify label in Orthanc:**
-```bash
-# Get Orthanc study ID
-ORTHANC_STUDY_ID=$(curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])")
+**Get the Orthanc study ID for label verification:**
+```cmd
+curl -s http://localhost:8001/studies | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])"
+```
+> Copy the printed value as `<ORTHANC_STUDY_ID>`.
 
-# Check labels on this study
-curl "http://localhost:8042/studies/${ORTHANC_STUDY_ID}/labels"
-# Expected: ["cohort:<uuid>"]
+**Check labels on the study (replace `<ORTHANC_STUDY_ID>`):**
+```cmd
+curl "http://localhost:8042/studies/<ORTHANC_STUDY_ID>/labels"
+```
+Expected: `["cohort:<uuid>"]`
+
+**DB check:**
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT cohort_definition_id, subject_id, orthanc_study_id, added_at FROM cohort;"
 ```
 
-**Verify membership in DB:**
-```bash
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT cohort_definition_id, subject_id, orthanc_study_id, added_at FROM cohort;"
-```
-
-**Sync-check — verify Orthanc agrees with DB:**
-```bash
-curl "http://localhost:8002/cohorts/${COHORT_ID}/orthanc"
-# Returns list of Orthanc study IDs carrying the cohort label
+**Sync-check:**
+```cmd
+curl "http://localhost:8002/cohorts/<COHORT_ID>/orthanc"
 ```
 
 ---
 
 ### Feature 8 — Cohort Update & Delete
 
-**Update cohort name:**
-```bash
-curl -X PUT "http://localhost:8002/cohort-definitions/${COHORT_ID}" \
-  -H "Content-Type: application/json" \
-  -d '{"cohort_definition_name": "Renamed Cohort"}'
+Replace `<COHORT_ID>` and `<ORTHANC_STUDY_ID>` with real values.
+
+**Rename:**
+```cmd
+curl -X PUT "http://localhost:8002/cohort-definitions/<COHORT_ID>" -H "Content-Type: application/json" -d "{\"cohort_definition_name\":\"Renamed Cohort\"}"
 ```
 
-**Delete cohort (removes label from Orthanc, deletes DB rows):**
-```bash
-curl -X DELETE "http://localhost:8002/cohort-definitions/${COHORT_ID}"
-# Expected: 204 No Content
-
-# Confirm label removed from Orthanc
-curl "http://localhost:8042/studies/${ORTHANC_STUDY_ID}/labels"
-# Expected: [] (empty)
-
-# Confirm DB cleaned up
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT COUNT(*) FROM cohort WHERE cohort_definition_id = '${COHORT_ID}';"
-# Expected: 0
+**Delete:**
+```cmd
+curl -X DELETE "http://localhost:8002/cohort-definitions/<COHORT_ID>"
 ```
+Expected: 204 No Content
+
+**Verify label removed from Orthanc:**
+```cmd
+curl "http://localhost:8042/studies/<ORTHANC_STUDY_ID>/labels"
+```
+Expected: `[]`
+
+**Verify DB cleaned up (replace `<COHORT_ID>`):**
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT COUNT(*) FROM cohort WHERE cohort_definition_id = '<COHORT_ID>';"
+```
+Expected: `0`
 
 ---
 
 ### Feature 9 — Federated ML Job Lifecycle
 
-**Via SPA:**
-1. Open http://localhost:3000/jobs
-2. Click **"+ New Job"**
-3. Enter a name, select algorithm `fedavg_stub`, pick a cohort (optional), set rounds
-4. Click **"Create Job"** — appears with status `PENDING`
-5. Click **"Start"** button — status changes to `RUNNING`
+**Via SPA:** http://localhost:3000/jobs → **+ New Job** → fill in name, `fedavg_stub`, rounds → Create → Start.
 
-**Via API (full lifecycle, Git Bash / Linux / Mac):**
-```bash
-# Create a job
-JOB_RESP=$(curl -s -X POST http://localhost:8002/jobs \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"test-fedavg-job\",
-    \"algorithm\": \"fedavg_stub\",
-    \"params\": {\"rounds\": 2}
-  }")
-JOB_ID=$(echo $JOB_RESP | python -c "import sys,json; print(json.load(sys.stdin)['id'])")
-echo "Job ID: $JOB_ID"
+**Via API — step by step:**
 
-# Start the job
-curl -X POST "http://localhost:8002/jobs/${JOB_ID}/start"
-# Expected: job status = RUNNING
-
-# Submit edge node result (round 1, node 1)
-curl -X POST "http://localhost:8002/jobs/${JOB_ID}/result" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "edge_node_id": "edge-node-1",
-    "round": 1,
-    "payload": {"local_loss": 0.42, "num_samples": 150, "model_weights_stub": {}}
-  }'
-
-# Submit from a second node
-curl -X POST "http://localhost:8002/jobs/${JOB_ID}/result" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "edge_node_id": "edge-node-2",
-    "round": 1,
-    "payload": {"local_loss": 0.35, "num_samples": 200, "model_weights_stub": {}}
-  }'
-
-# Aggregate results (sets status → DONE)
-curl -s "http://localhost:8002/jobs/${JOB_ID}/aggregate" | python -m json.tool
-# Expected: global_loss=0.385, total_samples=350, num_nodes=2, status=DONE
+**Step 1 — create job:**
+```cmd
+curl -s -X POST http://localhost:8002/jobs -H "Content-Type: application/json" -d "{\"name\":\"test-fedavg-job\",\"algorithm\":\"fedavg_stub\",\"params\":{\"rounds\":2}}"
 ```
+Copy the `"id"` value from the response as `<JOB_ID>`.
+
+**Step 2 — start:**
+```cmd
+curl -X POST "http://localhost:8002/jobs/<JOB_ID>/start"
+```
+Expected: status = `RUNNING`
+
+**Step 3 — submit edge result (node 1):**
+```cmd
+curl -X POST "http://localhost:8002/jobs/<JOB_ID>/result" -H "Content-Type: application/json" -d "{\"edge_node_id\":\"edge-node-1\",\"round\":1,\"payload\":{\"local_loss\":0.42,\"num_samples\":150,\"model_weights_stub\":{}}}"
+```
+
+**Step 4 — submit edge result (node 2):**
+```cmd
+curl -X POST "http://localhost:8002/jobs/<JOB_ID>/result" -H "Content-Type: application/json" -d "{\"edge_node_id\":\"edge-node-2\",\"round\":1,\"payload\":{\"local_loss\":0.35,\"num_samples\":200,\"model_weights_stub\":{}}}"
+```
+
+**Step 5 — aggregate:**
+```cmd
+curl -s "http://localhost:8002/jobs/<JOB_ID>/aggregate" | python -m json.tool
+```
+Expected: `global_loss=0.385`, `total_samples=350`, `num_nodes=2`, `status=DONE`
 
 **DB check:**
-```bash
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT id, name, status, result_summary, started_at, finished_at FROM ml_jobs ORDER BY created_at DESC LIMIT 5;"
-
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT edge_node_id, round, payload FROM job_edge_results WHERE job_id = '${JOB_ID}';"
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT id, name, status, result_summary, started_at, finished_at FROM ml_jobs ORDER BY created_at DESC LIMIT 5;"
 ```
 
-**Conflict guard test — try to start DONE job:**
-```bash
-curl -X POST "http://localhost:8002/jobs/${JOB_ID}/start"
-# Expected: 409 Conflict
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT edge_node_id, round, payload FROM job_edge_results WHERE job_id = '<JOB_ID>';"
 ```
+
+**Conflict guard — try to start a DONE job:**
+```cmd
+curl -X POST "http://localhost:8002/jobs/<JOB_ID>/start"
+```
+Expected: 409 Conflict
 
 ---
 
 ### Feature 10 — Soft Delete Propagation
 
 > **How it works:** The `orthancteam/orthanc` PostgreSQL plugin does **not** emit a
-> `DeletedStudy` change event when a study is deleted. Instead, the core-service poller
-> runs a **reconciliation** every ~30 s: it fetches the current study list from Orthanc
-> and soft-deletes any DB entries whose `orthanc_id` is no longer present.
-> Allow up to **~35 seconds** after deletion for `deleted_at` to be set.
+> `DeletedStudy` change event. The core-service poller runs a **reconciliation every ~30 s**:
+> it compares the live Orthanc study list with the DB and soft-deletes any missing entries.
+> Allow **~35 seconds** after deletion for `deleted_at` to be set.
 
-**Delete study from Orthanc and verify soft-delete in PG (Git Bash / Linux / Mac):**
-```bash
-ORTHANC_STUDY_ID=$(curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['orthanc_id'])")
+**Step 1 — get IDs:**
+```cmd
+curl -s http://localhost:8001/studies | python -c "import sys,json; d=json.load(sys.stdin); print('orthanc_id:', d['items'][0]['orthanc_id']); print('study_uid: ', d['items'][0]['study_uid'])"
+```
+Copy both values as `<ORTHANC_STUDY_ID>` and `<STUDY_UID>`.
 
-STUDY_UID=$(curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['study_uid'])")
+**Step 2 — delete from Orthanc:**
+```cmd
+curl -X DELETE "http://localhost:8042/studies/<ORTHANC_STUDY_ID>"
+```
 
-# Delete from Orthanc
-curl -X DELETE "http://localhost:8042/studies/${ORTHANC_STUDY_ID}"
+**Step 3 — wait ~35 seconds, then check:**
+```cmd
+curl -s "http://localhost:8001/studies?include_deleted=true" | python -c "import sys,json; d=json.load(sys.stdin); [print(s['study_uid'], s['deleted_at']) for s in d['items']]"
+```
 
-# Wait for reconciliation (~35 seconds)
-sleep 35
+**Verify it is hidden from the default list:**
+```cmd
+curl -s http://localhost:8001/studies | python -c "import sys,json; print('total:', json.load(sys.stdin)['total'])"
+```
 
-# Check study is soft-deleted (deleted_at set)
-curl -s "http://localhost:8001/studies?include_deleted=true" | \
-  python -c "import sys,json; d=json.load(sys.stdin); [print(s['study_uid'], s['deleted_at']) for s in d['items']]"
-
-# Studies list by default hides deleted — verify it's gone from default list
-curl -s http://localhost:8001/studies | \
-  python -c "import sys,json; print('total:', json.load(sys.stdin)['total'])"
-
-# DB check
-docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c \
-  "SELECT study_uid, deleted_at FROM studies WHERE deleted_at IS NOT NULL;"
+**DB check:**
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT study_uid, deleted_at FROM studies WHERE deleted_at IS NOT NULL;"
 ```
 
 ---
 
 ### Feature 11 — Monitoring (Prometheus & Grafana)
 
-**Prometheus:**
-1. Open http://localhost:9090
-2. In the search bar, query: `dcm_studies_ingested_total`
-3. Click **Execute** — should show counter > 0 after upload
-4. Query `dcm_poller_last_seq` to see the change sequence
-5. Query `dcm_poller_lag_seconds` — should be 0 on a healthy stack
+1. Open http://localhost:9090 → query `dcm_studies_ingested_total` → Execute
+2. Query `dcm_poller_last_seq` and `dcm_poller_lag_seconds`
+3. Open http://localhost:3001 → login admin/admin → Dashboards → Browse
 
-**Grafana:**
-1. Open http://localhost:3001
-2. Login: admin / admin (skip password change)
-3. Navigate to **Dashboards → Browse** — look for pre-provisioned DCM dashboards
-4. Verify metrics panels show data
-
-**Metrics endpoint check:**
-```bash
-curl http://localhost:8001/metrics | grep dcm_studies
-curl http://localhost:8002/metrics | grep dcm_cohort
+**Metrics endpoints:**
+```cmd
+curl http://localhost:8001/metrics | findstr dcm_studies
+curl http://localhost:8002/metrics | findstr dcm_cohort
 ```
 
 ---
 
 ## 5. Smoke Test Script
 
-The `scripts/smoke_test.sh` automates steps 1–10 end-to-end.
+> **Requires Git Bash** (not CMD). Install via https://git-scm.com/download/win.
 
-> **Prerequisites:** Git Bash (Windows) or any bash shell. Requires `curl` and `python` on PATH.
+### Prepare a fresh DICOM file (run in Git Bash)
 
-### Prepare a fresh DICOM file
-
-Each smoke test run needs a DICOM file with **unique UIDs** (re-using the same file causes
-an `AlreadyStored` response from Orthanc with a different JSON shape). Generate one:
+Each run needs a file with unique UIDs. Generate one:
 
 ```bash
 python -c "
@@ -548,77 +395,53 @@ from pydicom.dataset import FileDataset
 from pydicom.uid import generate_uid
 import pydicom.uid
 
-filename = 'test_smoke.dcm'
-sop_uid = generate_uid()
-file_meta = pydicom.dataset.FileMetaDataset()
-file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'
-file_meta.MediaStorageSOPInstanceUID = sop_uid
-file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+sop = generate_uid()
+m = pydicom.dataset.FileMetaDataset()
+m.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'
+m.MediaStorageSOPInstanceUID = sop
+m.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
 
-ds = FileDataset(filename, {}, file_meta=file_meta, preamble=b'\x00'*128)
+ds = FileDataset('test_smoke.dcm', {}, file_meta=m, preamble=b'\x00'*128)
 ds.is_implicit_VR = False; ds.is_little_endian = True
 ts = str(int(time.time()))
-ds.PatientName = f'Smoke^{ts}'; ds.PatientID = f'SMOKE{ts}'
+ds.PatientName = 'Smoke^' + ts; ds.PatientID = 'S' + ts
 ds.PatientSex = 'M'; ds.StudyDate = '20260101'; ds.StudyTime = '120000'
 ds.StudyInstanceUID = generate_uid(); ds.SeriesInstanceUID = generate_uid()
-ds.SOPInstanceUID = sop_uid; ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
+ds.SOPInstanceUID = sop; ds.SOPClassUID = m.MediaStorageSOPClassUID
 ds.Modality = 'CT'; ds.InstitutionName = 'SmokeHospital'
 ds.SeriesNumber = '1'; ds.InstanceNumber = '1'
 ds.Rows = 8; ds.Columns = 8; ds.BitsAllocated = 8; ds.BitsStored = 8
 ds.HighBit = 7; ds.PixelRepresentation = 0; ds.SamplesPerPixel = 1
 ds.PhotometricInterpretation = 'MONOCHROME2'; ds.PixelData = bytes(64)
-pydicom.dcmwrite(filename, ds)
-print('Created', filename)
+pydicom.dcmwrite('test_smoke.dcm', ds)
+print('Created test_smoke.dcm')
 "
 ```
 
-### Run
+### Run (Git Bash)
 
 ```bash
 cd dcm-poc
-chmod +x scripts/smoke_test.sh
-
-# Default POLL_WAIT is 12s — override to 75s to account for Orthanc StableStudy delay
 POLL_WAIT=75 ./scripts/smoke_test.sh test_smoke.dcm
 ```
 
-Expected output:
-```
-All smoke tests PASSED.
-```
+Expected output: `All smoke tests PASSED.`
 
-> **Timing note:** The script waits `POLL_WAIT` seconds twice — once for ingestion (after
-> upload) and once for soft-delete propagation (after Orthanc delete). At `POLL_WAIT=75`
-> the full run takes ~3 minutes.
+> **Timing:** The script waits `POLL_WAIT` seconds twice (ingestion + soft-delete).
+> At `POLL_WAIT=75` the full run takes ~3 minutes.
 
 ---
 
-## 6. Windows CMD — Quick Reference
+## 6. Postgres Direct Access
 
-Most commands in this guide use bash syntax (`$VAR`, `\` continuation). In **Windows CMD**,
-use these equivalents:
-
-| Bash | Windows CMD |
-|---|---|
-| `python3` | `python` |
-| `\` (line continuation) | `^` |
-| `$(command)` | Run command separately, copy output |
-| `head -N` | `python -c "import sys; [print(l, end='') for i,l in enumerate(sys.stdin) if i<N]"` |
-| `/tmp/file` | `C:\Temp\file` (create `C:\Temp` first) |
-
-**Recommended:** Use **Git Bash** (included with Git for Windows) to run all commands
-exactly as written.
-
----
-
-## 7. Postgres Direct Access
-
-```bash
-# Connect to the database
+**Interactive session:**
+```cmd
 docker exec -it dcm-poc-postgres-1 psql -U dcm -d dcmdb
+```
 
-# Useful queries
-\dt                                  -- list all tables
+Inside psql:
+```sql
+\dt
 SELECT * FROM studies LIMIT 5;
 SELECT * FROM series LIMIT 5;
 SELECT * FROM instances LIMIT 5;
@@ -626,10 +449,10 @@ SELECT * FROM cohort_definition;
 SELECT * FROM cohort;
 SELECT * FROM ml_jobs;
 SELECT * FROM job_edge_results;
-SELECT * FROM poller_state;          -- shows last processed Orthanc change seq
+SELECT * FROM poller_state;
 ```
 
-> **Windows CMD note:** Remove the `-it` flags and drop multiline `\` continuation:
-> ```cmd
-> docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT * FROM studies LIMIT 5;"
-> ```
+**One-liner from CMD (no interactive session):**
+```cmd
+docker exec dcm-poc-postgres-1 psql -U dcm -d dcmdb -c "SELECT * FROM studies LIMIT 5;"
+```
