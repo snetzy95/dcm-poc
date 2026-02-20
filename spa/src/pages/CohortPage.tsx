@@ -2,15 +2,26 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchCohortDefinitions, createCohortDefinition, resolveCohort, fetchMembers,
+  deleteCohortDefinition,
   CohortDefinition, OrthancTagCriteria,
 } from '../api/mlClient'
 import CohortForm from '../components/CohortForm'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+function TrashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+    </svg>
+  )
+}
 
 export default function CohortPage() {
   const qc = useQueryClient()
   const [selected, setSelected] = useState<CohortDefinition | null>(null)
   const [resolveResult, setResolveResult] = useState<{ matched_count: number; study_uids: string[] } | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const { data: definitions = [], isLoading } = useQuery({
     queryKey: ['cohort-definitions'],
@@ -37,6 +48,22 @@ export default function CohortPage() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteCohortDefinition(id),
+    onSuccess: (_, id) => {
+      if (selected?.cohort_definition_id === id) {
+        setSelected(null)
+        setResolveResult(null)
+      }
+      qc.invalidateQueries({ queryKey: ['cohort-definitions'] })
+      qc.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+
+  const pendingDeleteCohort = pendingDeleteId
+    ? definitions.find(d => d.cohort_definition_id === pendingDeleteId)
+    : null
+
   return (
     <div className="flex gap-6">
       {/* Left: list */}
@@ -53,10 +80,19 @@ export default function CohortPage() {
             <li
               key={d.cohort_definition_id}
               onClick={() => { setSelected(d); setResolveResult(null) }}
-              className={`cursor-pointer px-3 py-2 rounded text-sm ${selected?.cohort_definition_id === d.cohort_definition_id ? 'bg-blue-50 border border-blue-300' : 'hover:bg-gray-100'}`}
+              className={`cursor-pointer px-3 py-2 rounded text-sm flex items-center justify-between gap-2 ${selected?.cohort_definition_id === d.cohort_definition_id ? 'bg-blue-50 border border-blue-300' : 'hover:bg-gray-100'}`}
             >
-              {d.cohort_definition_name}
-              <span className="text-xs text-gray-400 block">{new Date(d.created_at).toLocaleDateString()}</span>
+              <div className="min-w-0">
+                <span className="block truncate">{d.cohort_definition_name}</span>
+                <span className="text-xs text-gray-400">{new Date(d.created_at).toLocaleDateString()}</span>
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); setPendingDeleteId(d.cohort_definition_id) }}
+                className="shrink-0 text-gray-400 hover:text-red-500 p-1 rounded"
+                title="Delete cohort"
+              >
+                <TrashIcon />
+              </button>
             </li>
           ))}
         </ul>
@@ -117,6 +153,15 @@ export default function CohortPage() {
           </div>
         )}
       </div>
+
+      {pendingDeleteId && pendingDeleteCohort && (
+        <ConfirmDialog
+          title="Delete Cohort?"
+          message={`Delete "${pendingDeleteCohort.cohort_definition_name}"? This will remove all cohort memberships and Orthanc labels for this cohort.`}
+          onConfirm={() => { deleteMutation.mutate(pendingDeleteId); setPendingDeleteId(null) }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
     </div>
   )
 }

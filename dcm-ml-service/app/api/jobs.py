@@ -69,6 +69,16 @@ async def submit_edge_result(job_id: UUID, body: EdgeResultSubmit, db: AsyncSess
     return {"message": "result received", "job_id": str(job_id), "edge_node_id": body.edge_node_id}
 
 
+@router.delete("/{job_id}", status_code=204)
+async def delete_job(job_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Delete a job. RUNNING jobs cannot be deleted (409 Conflict)."""
+    job = await _get_job_or_404(job_id, db)
+    if job.status == "RUNNING":
+        raise HTTPException(status_code=409, detail="Cannot delete a RUNNING job")
+    await db.delete(job)
+    await db.commit()
+
+
 @router.get("/{job_id}/aggregate", response_model=AggregateResult)
 async def aggregate(job_id: UUID, db: AsyncSession = Depends(get_db)):
     job = await _get_job_or_404(job_id, db)

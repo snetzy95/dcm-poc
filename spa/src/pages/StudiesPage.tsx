@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchStudies } from '../api/coreClient'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchStudies, deleteStudy } from '../api/coreClient'
 import StudyTable from '../components/StudyTable'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function StudiesPage() {
+  const qc = useQueryClient()
   const [modality, setModality] = useState('')
   const [sex, setSex] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [includeDeleted, setIncludeDeleted] = useState(false)
+  const [pendingDeleteOrthancId, setPendingDeleteOrthancId] = useState<string | null>(null)
 
   const params: Record<string, string | number> = { page, page_size: 20 }
   if (modality) params.modality = modality
@@ -23,7 +26,18 @@ export default function StudiesPage() {
     queryFn: () => fetchStudies(params),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (orthancId: string) => deleteStudy(orthancId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['studies'] })
+    },
+  })
+
   const inputCls = 'border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400'
+
+  const pendingDeleteStudy = pendingDeleteOrthancId
+    ? data?.items.find(s => s.orthanc_id === pendingDeleteOrthancId)
+    : null
 
   return (
     <div className="space-y-4">
@@ -62,13 +76,26 @@ export default function StudiesPage() {
       {data && (
         <>
           <p className="text-sm text-gray-500">{data.total} total studies</p>
-          <StudyTable studies={data.items} />
+          <StudyTable
+            studies={data.items}
+            onDeleteStudy={id => setPendingDeleteOrthancId(id)}
+            deletingOrthancId={deleteMutation.isPending ? pendingDeleteOrthancId : null}
+          />
           <div className="flex gap-2 mt-2">
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 text-sm border rounded disabled:opacity-40 hover:bg-gray-100">Prev</button>
             <span className="px-3 py-1.5 text-sm">Page {page}</span>
             <button disabled={data.items.length < 20} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 text-sm border rounded disabled:opacity-40 hover:bg-gray-100">Next</button>
           </div>
         </>
+      )}
+
+      {pendingDeleteOrthancId && pendingDeleteStudy && (
+        <ConfirmDialog
+          title="Delete Study from Orthanc?"
+          message={`Delete "${pendingDeleteStudy.patient_name ?? pendingDeleteStudy.patient_id ?? pendingDeleteStudy.study_uid}"? The study will be removed from Orthanc and soft-deleted in the database within ~30 seconds.`}
+          onConfirm={() => { deleteMutation.mutate(pendingDeleteOrthancId); setPendingDeleteOrthancId(null) }}
+          onCancel={() => setPendingDeleteOrthancId(null)}
+        />
       )}
     </div>
   )
