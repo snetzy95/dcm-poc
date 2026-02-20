@@ -1,0 +1,22 @@
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+
+from .config import settings
+
+engine = create_async_engine(settings.database_url, echo=False, pool_pre_ping=True)
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+
+async def create_tables():
+    # Tables are created via postgres/init.sql — nothing to do here.
+    # This function exists so main.py can call it on startup without error.
+    pass

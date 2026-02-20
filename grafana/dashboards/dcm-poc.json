@@ -1,0 +1,114 @@
+{
+  "title": "DCM PoC Overview",
+  "uid": "dcm-poc-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Studies Ingested (total)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "dcm_studies_ingested_total",
+          "legendFormat": "ingested"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Studies Deleted (total)",
+      "type": "stat",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "dcm_studies_deleted_total",
+          "legendFormat": "deleted"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Cohort Members Created (total)",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "dcm_cohort_members_total",
+          "legendFormat": "cohort members"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Orthanc Poller — Last Sequence",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "dcm_poller_last_seq",
+          "legendFormat": "last seq"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "HTTP Request Rate (core-service)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(http_requests_total{job=\"dcm-core-service\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "HTTP Request Rate (ml-service)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(http_requests_total{job=\"dcm-ml-service\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP P95 Latency (core-service)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"dcm-core-service\"}[5m]))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "ML Jobs by Status",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "dcm_ml_jobs_total",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    }
+  ]
+}

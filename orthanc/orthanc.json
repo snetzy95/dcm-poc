@@ -1,0 +1,33 @@
+{
+  "Name": "dcm-poc-orthanc",
+  "HttpPort": 8042,
+  "DicomPort": 4242,
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": false,
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "HttpVerbsAllowed": ["GET", "POST", "PUT", "DELETE"],
+  "DicomScuTimeout": 10,
+  "HttpRequestTimeout": 30,
+  "LimitFindResults": 0,
+  "LimitFindInstances": 0,
+  "LogExportedResources": false,
+  "CaseSensitivePN": false,
+  "StableAge": 60,
+  "JobsHistorySize": 10,
+  "OverwriteInstances": true,
+  "PostgreSQL": {
+    "EnableIndex": true,
+    "EnableStorage": false,
+    "Host": "postgres",
+    "Port": 5432,
+    "Database": "dcmdb",
+    "Username": "dcm",
+    "Password": "dcmpassword",
+    "EnableSsl": false,
+    "MaximumConnectionRetries": 10,
+    "ConnectionRetryInterval": 5,
+    "IndexConnectionsCount": 5,
+    "TransactionMode": "ReadCommitted"
+  }
+}

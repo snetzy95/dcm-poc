@@ -1,0 +1,129 @@
+version: "3.9"
+
+networks:
+  dcm-net:
+    driver: bridge
+
+volumes:
+  orthanc-data:
+  pg-data:
+  grafana-data:
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: dcmdb
+      POSTGRES_USER: dcm
+      POSTGRES_PASSWORD: dcmpassword
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [dcm-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dcm -d dcmdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  orthanc:
+    image: orthancteam/orthanc:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ORTHANC__POSTGRESQL__HOST: postgres
+      ORTHANC__POSTGRESQL__DATABASE: dcmdb
+      ORTHANC__POSTGRESQL__USERNAME: dcm
+      ORTHANC__POSTGRESQL__PASSWORD: dcmpassword
+      ORTHANC__POSTGRESQL__ENABLE_INDEX: "true"
+      ORTHANC__POSTGRESQL__ENABLE_STORAGE: "false"
+    volumes:
+      - orthanc-data:/var/lib/orthanc/db
+      - ./orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+    ports:
+      - "8042:8042"
+      - "4242:4242"
+    networks: [dcm-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8042/system || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  dcm-core-service:
+    build: ./dcm-core-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      orthanc:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dcm:dcmpassword@postgres:5432/dcmdb
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USER: ""
+      ORTHANC_PASS: ""
+      POLL_INTERVAL_SECONDS: "5"
+    ports:
+      - "8001:8001"
+    networks: [dcm-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  dcm-ml-service:
+    build: ./dcm-ml-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dcm-core-service:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dcm:dcmpassword@postgres:5432/dcmdb
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USER: ""
+      ORTHANC_PASS: ""
+      CORE_SERVICE_URL: http://dcm-core-service:8001
+    ports:
+      - "8002:8002"
+    networks: [dcm-net]
+
+  spa:
+    build: ./spa
+    depends_on:
+      - dcm-core-service
+      - dcm-ml-service
+    ports:
+      - "3000:80"
+    networks: [dcm-net]
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks: [dcm-net]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks: [dcm-net]

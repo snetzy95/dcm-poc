@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: dcm-core-service
+    static_configs:
+      - targets: ['dcm-core-service:8001']
+
+  - job_name: dcm-ml-service
+    static_configs:
+      - targets: ['dcm-ml-service:8002']
