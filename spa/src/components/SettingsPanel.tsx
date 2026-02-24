@@ -27,8 +27,6 @@ type ImgService = {
   name: string
   url: string
   logo: string
-  /** when true, render logo inside a teal pill (for white logos) */
-  tealBg?: boolean
 }
 
 type ServiceEntry = IconService | ImgService
