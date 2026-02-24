@@ -298,3 +298,124 @@ async def test_create_job_with_cohort_id():
     assert resp.status_code == 201
     data = resp.json()
     assert data["cohort_definition_id"] == str(cohort_id)
+
+
+# ── delete job ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_delete_pending_job_returns_204():
+    """DELETE /jobs/{id} for a PENDING job should return 204 and remove the job."""
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app
+    from app.database import get_db
+
+    job = make_job("PENDING")
+
+    db = AsyncMock()
+    res = MagicMock()
+    res.scalar_one_or_none.return_value = job
+    db.execute = AsyncMock(return_value=res)
+    db.delete = AsyncMock()
+    db.commit = AsyncMock()
+
+    async def override():
+        yield db
+
+    app.dependency_overrides[get_db] = override
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.delete(f"/jobs/{job.id}")
+
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 204
+    db.delete.assert_awaited_once_with(job)
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_done_job_returns_204():
+    """DELETE /jobs/{id} for a DONE job should return 204."""
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app
+    from app.database import get_db
+
+    job = make_job("DONE")
+
+    db = AsyncMock()
+    res = MagicMock()
+    res.scalar_one_or_none.return_value = job
+    db.execute = AsyncMock(return_value=res)
+    db.delete = AsyncMock()
+    db.commit = AsyncMock()
+
+    async def override():
+        yield db
+
+    app.dependency_overrides[get_db] = override
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.delete(f"/jobs/{job.id}")
+
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 204
+    db.delete.assert_awaited_once_with(job)
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_running_job_returns_409():
+    """DELETE /jobs/{id} for a RUNNING job should return 409 Conflict."""
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app
+    from app.database import get_db
+
+    job = make_job("RUNNING")
+
+    db = AsyncMock()
+    res = MagicMock()
+    res.scalar_one_or_none.return_value = job
+    db.execute = AsyncMock(return_value=res)
+    db.delete = AsyncMock()
+    db.commit = AsyncMock()
+
+    async def override():
+        yield db
+
+    app.dependency_overrides[get_db] = override
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.delete(f"/jobs/{job.id}")
+
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 409
+    assert "RUNNING" in resp.json()["detail"]
+    db.delete.assert_not_awaited()
+    db.commit.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_delete_job_not_found_returns_404():
+    """DELETE /jobs/{id} for an unknown job id should return 404."""
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app
+    from app.database import get_db
+
+    db = AsyncMock()
+    res = MagicMock()
+    res.scalar_one_or_none.return_value = None
+    db.execute = AsyncMock(return_value=res)
+
+    async def override():
+        yield db
+
+    app.dependency_overrides[get_db] = override
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.delete(f"/jobs/{uuid4()}")
+
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 404

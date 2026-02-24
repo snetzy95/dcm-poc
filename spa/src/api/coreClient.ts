@@ -40,3 +40,18 @@ export const fetchStudies = (params?: Record<string, string | number>) =>
 
 export const fetchStudy = (uid: string) =>
   coreApi.get<Study>(`/studies/${uid}`).then(r => r.data)
+
+// Orthanc direct proxy (Vite maps /orthanc → http://localhost:8042)
+export const orthancApi = axios.create({ baseURL: '/orthanc' })
+
+export const deleteStudy = (orthancId: string) =>
+  orthancApi.delete(`/studies/${orthancId}`)
+
+export const fetchStudyLabels = (orthancId: string) =>
+  orthancApi.get<string[]>(`/studies/${orthancId}/labels`).then(r => r.data)
+
+export const addStudyLabel = (orthancId: string, label: string) =>
+  orthancApi.put(`/studies/${orthancId}/labels/${encodeURIComponent(label)}`)
+
+export const removeStudyLabel = (orthancId: string, label: string) =>
+  orthancApi.delete(`/studies/${orthancId}/labels/${encodeURIComponent(label)}`)

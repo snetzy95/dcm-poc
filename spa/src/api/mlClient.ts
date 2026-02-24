@@ -65,3 +65,18 @@ export const createJob = (body: Pick<MLJob, 'name' | 'algorithm' | 'params'> & {
 
 export const startJob = (id: string) =>
   mlApi.post<MLJob>(`/jobs/${id}/start`).then(r => r.data)
+
+export const deleteJob = (id: string) =>
+  mlApi.delete(`/jobs/${id}`)
+
+export const submitEdgeResult = (
+  id: string,
+  body: { edge_node_id: string; round: number; payload: Record<string, unknown> }
+) =>
+  mlApi.post<{ message: string; job_id: string; edge_node_id: string }>(`/jobs/${id}/result`, body).then(r => r.data)
+
+export const aggregateJob = (id: string) =>
+  mlApi.get(`/jobs/${id}/aggregate`).then(r => r.data)
+
+export const deleteCohortDefinition = (id: string) =>
+  mlApi.delete(`/cohort-definitions/${id}`)
