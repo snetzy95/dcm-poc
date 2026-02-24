@@ -7,12 +7,12 @@ import { useTheme } from '../context/ThemeContext'
 const PROMETHEUS_LOGO = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg'
 const GRAFANA_LOGO    = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/grafana/grafana-original.svg'
 const POSTGRES_LOGO   = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg'
-const ORTHANC_LOGO    = 'https://www.orthanc-server.com/img/Carousel/1-Logo.png'
+const ORTHANC_LOGO    = '/orthanc-icon.png'  // local static asset — icon-only "H" symbol
 const EGROUP_LOGO     = 'https://www.egroup.hu/wp-content/uploads/2021/03/E-Group-feh%C3%A9r-transzparens-bkg.png'
 
 // DBeaver deep-link: opens a connection directly to our PostgreSQL DB
 const DBEAVER_URL =
-  'dbeaver://open?driver=postgresql&host=localhost&port=5432&database=dcmdb&user=dcm&password=dcm'
+  'dbeaver://open?driver=postgresql&host=localhost&port=5432&database=dcmdb&user=dcm&password=dcmpassword'
 
 type IconService = {
   type: 'icon'
