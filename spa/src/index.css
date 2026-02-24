@@ -5,6 +5,7 @@
 @layer base {
   body {
     @apply bg-slate-50 text-slate-800;
+    @apply dark:bg-slate-900 dark:text-slate-100;
   }
 }
 

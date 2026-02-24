@@ -48,8 +48,8 @@ export default function CohortForm({ onSubmit, loading }: Props) {
     }
   }
 
-  const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 hover:border-slate-400 transition-all duration-200'
-  const labelCls = 'block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1'
+  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 hover:border-slate-400 dark:hover:border-slate-500 transition-all duration-200'
+  const labelCls = 'block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,16 +104,16 @@ export default function CohortForm({ onSubmit, loading }: Props) {
           <input className={`${inputCls} flex-1`} placeholder="Tag (0008,0060)" value={tagInput.tag} onChange={e => setTagInput(t => ({ ...t, tag: e.target.value }))} />
           <input className={`${inputCls} flex-1`} placeholder="Name (Modality)" value={tagInput.name} onChange={e => setTagInput(t => ({ ...t, name: e.target.value }))} />
           <input className={`${inputCls} flex-1`} placeholder="Value (CT)" value={tagInput.value} onChange={e => setTagInput(t => ({ ...t, value: e.target.value }))} />
-          <button type="button" onClick={addTag} className="px-3 py-2.5 text-sm font-medium bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 whitespace-nowrap">Add</button>
+          <button type="button" onClick={addTag} className="px-3 py-2.5 text-sm font-medium bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 hover:border-slate-400 transition-all duration-200 whitespace-nowrap">Add</button>
         </div>
         {tags.length > 0 && (
           <ul className="text-xs space-y-1">
             {tags.map((t, i) => (
-              <li key={i} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <code className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{t.tag}</code>
-                <span className="text-slate-500">{t.name}</span>
-                <span className="text-slate-400">=</span>
-                <strong className="text-slate-700">{t.value}</strong>
+              <li key={i} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
+                <code className="font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{t.tag}</code>
+                <span className="text-slate-500 dark:text-slate-400">{t.name}</span>
+                <span className="text-slate-400 dark:text-slate-500">=</span>
+                <strong className="text-slate-700 dark:text-slate-200">{t.value}</strong>
                 <button type="button" onClick={() => setTags(tags.filter((_, j) => j !== i))} className="ml-auto text-slate-400 hover:text-rose-500 transition-colors duration-200">×</button>
               </li>
             ))}
