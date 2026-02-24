@@ -48,8 +48,8 @@ export default function CohortForm({ onSubmit, loading }: Props) {
     }
   }
 
-  const inputCls = 'w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400'
-  const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+  const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 hover:border-slate-400 transition-all duration-200'
+  const labelCls = 'block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,21 +104,24 @@ export default function CohortForm({ onSubmit, loading }: Props) {
           <input className={`${inputCls} flex-1`} placeholder="Tag (0008,0060)" value={tagInput.tag} onChange={e => setTagInput(t => ({ ...t, tag: e.target.value }))} />
           <input className={`${inputCls} flex-1`} placeholder="Name (Modality)" value={tagInput.name} onChange={e => setTagInput(t => ({ ...t, name: e.target.value }))} />
           <input className={`${inputCls} flex-1`} placeholder="Value (CT)" value={tagInput.value} onChange={e => setTagInput(t => ({ ...t, value: e.target.value }))} />
-          <button type="button" onClick={addTag} className="px-3 py-1.5 text-sm bg-gray-200 rounded hover:bg-gray-300">Add</button>
+          <button type="button" onClick={addTag} className="px-3 py-2.5 text-sm font-medium bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 whitespace-nowrap">Add</button>
         </div>
         {tags.length > 0 && (
           <ul className="text-xs space-y-1">
             {tags.map((t, i) => (
-              <li key={i} className="flex items-center gap-2 bg-gray-50 px-2 py-1 rounded">
-                <code>{t.tag}</code> <span>{t.name}</span> = <strong>{t.value}</strong>
-                <button type="button" onClick={() => setTags(tags.filter((_, j) => j !== i))} className="ml-auto text-red-500 hover:text-red-700">x</button>
+              <li key={i} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                <code className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{t.tag}</code>
+                <span className="text-slate-500">{t.name}</span>
+                <span className="text-slate-400">=</span>
+                <strong className="text-slate-700">{t.value}</strong>
+                <button type="button" onClick={() => setTags(tags.filter((_, j) => j !== i))} className="ml-auto text-slate-400 hover:text-rose-500 transition-colors duration-200">×</button>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+      <button type="submit" disabled={loading} className="px-4 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 active:bg-teal-800 transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50">
         {loading ? 'Saving...' : 'Save Cohort Definition'}
       </button>
     </form>
