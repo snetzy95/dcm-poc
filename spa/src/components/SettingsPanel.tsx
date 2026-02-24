@@ -30,7 +30,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-40 bg-slate-600/30 dark:bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
       />
 
@@ -84,7 +84,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
             <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-3">
                 {theme === 'dark'
-                  ? <Moon className="h-5 w-5 text-slate-400 dark:text-slate-300" />
+                  ? <Moon className="h-5 w-5 text-slate-300" />
                   : <Sun className="h-5 w-5 text-amber-500" />
                 }
                 <div>
@@ -99,7 +99,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
                 onClick={toggleTheme}
                 role="switch"
                 aria-checked={theme === 'dark'}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500/30 ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400/50 dark:focus:ring-teal-300/60 ${
                   theme === 'dark' ? 'bg-teal-600' : 'bg-slate-200'
                 }`}
               >

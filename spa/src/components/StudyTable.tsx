@@ -164,7 +164,7 @@ export default function StudyTable({ studies, onDeleteStudy, deletingOrthancId }
                       <button
                         onClick={() => onDeleteStudy(s.orthanc_id)}
                         disabled={isDeleting}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 disabled:opacity-40"
                         title="Delete study from Orthanc"
                       >
                         {isDeleting
