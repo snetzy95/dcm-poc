@@ -8,7 +8,7 @@ const PROMETHEUS_LOGO = 'https://raw.githubusercontent.com/devicons/devicon/mast
 const GRAFANA_LOGO    = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/grafana/grafana-original.svg'
 const POSTGRES_LOGO   = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg'
 const ORTHANC_LOGO    = '/orthanc-icon.png'  // local static asset — icon-only "H" symbol
-const EGROUP_LOGO     = 'https://www.egroup.hu/wp-content/uploads/2021/03/E-Group-feh%C3%A9r-transzparens-bkg.png'
+const EGROUP_LOGO     = '/egroup-logo.png'  // local static asset — white logo on transparent bg
 
 // DBeaver deep-link: opens a connection directly to our PostgreSQL DB
 const DBEAVER_URL =
