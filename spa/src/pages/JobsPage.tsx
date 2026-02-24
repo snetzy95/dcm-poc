@@ -79,7 +79,7 @@ export default function JobsPage() {
 
   const pendingDeleteJob = pendingDeleteId ? jobs.find(j => j.id === pendingDeleteId) : null
 
-  const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 hover:border-slate-400 transition-all duration-200'
+  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 hover:border-slate-400 dark:hover:border-slate-500 transition-all duration-200'
 
   function getCohortLabel(job: MLJob) {
     if (!job.cohort_definition_id) return null
@@ -92,7 +92,7 @@ export default function JobsPage() {
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-800">ML Jobs</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">ML Jobs</h1>
         <button
           onClick={() => setShowForm(s => !s)}
           className="px-4 py-2.5 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-all duration-200 shadow-sm hover:shadow"
@@ -103,25 +103,25 @@ export default function JobsPage() {
 
       {/* Create Job Form */}
       {showForm && (
-        <div className="bg-white rounded-xl shadow-card border border-slate-100 p-6 max-w-lg space-y-4">
-          <h2 className="text-lg font-semibold text-slate-800">Create Federated ML Job</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-card border border-slate-100 dark:border-slate-700 p-6 max-w-lg space-y-4">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Create Federated ML Job</h2>
           <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Job Name *</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Job Name *</label>
             <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="FedAvg Round 1" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Algorithm</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Algorithm</label>
             <input className={inputCls} value={form.algorithm} onChange={e => setForm(f => ({ ...f, algorithm: e.target.value }))} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Cohort (optional)</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cohort (optional)</label>
             <select className={inputCls} value={form.cohort_definition_id} onChange={e => setForm(f => ({ ...f, cohort_definition_id: e.target.value }))}>
               <option value="">None</option>
               {cohorts.map(c => <option key={c.cohort_definition_id} value={c.cohort_definition_id}>{c.cohort_definition_name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Rounds</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Rounds</label>
             <input type="number" min={1} className={inputCls} value={form.rounds} onChange={e => setForm(f => ({ ...f, rounds: e.target.value }))} />
           </div>
           <button
@@ -134,22 +134,22 @@ export default function JobsPage() {
         </div>
       )}
 
-      {isLoading && <p className="text-slate-400 text-sm">Loading...</p>}
+      {isLoading && <p className="text-slate-400 dark:text-slate-500 text-sm">Loading...</p>}
 
       {/* Jobs List */}
       <div className="space-y-3">
         {jobs.map(job => {
           const borderCls = STATUS_BORDER[job.status] ?? 'border-l-slate-400'
           return (
-            <div key={job.id} className={`bg-white border border-slate-100 border-l-4 ${borderCls} rounded-xl shadow-card overflow-hidden`}>
+            <div key={job.id} className={`bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 border-l-4 ${borderCls} rounded-xl shadow-card overflow-hidden`}>
               <div
-                className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-slate-50/80 transition-colors duration-150"
+                className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors duration-150"
                 onClick={() => setExpanded(expanded === job.id ? null : job.id)}
               >
                 <JobStatusBadge status={job.status} />
-                <span className="font-medium text-slate-800 text-sm flex-1">{job.name}</span>
-                <span className="text-xs text-slate-400 font-mono">{job.algorithm}</span>
-                <span className="text-xs text-slate-400">{new Date(job.created_at).toLocaleDateString()}</span>
+                <span className="font-medium text-slate-800 dark:text-slate-100 text-sm flex-1">{job.name}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">{job.algorithm}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{new Date(job.created_at).toLocaleDateString()}</span>
 
                 {/* PENDING: Start button */}
                 {job.status === 'PENDING' && (
@@ -168,7 +168,7 @@ export default function JobsPage() {
                     <button
                       onClick={e => { e.stopPropagation(); simulateMutation.mutate(job.id) }}
                       disabled={simulateMutation.isPending}
-                      className="text-xs px-3 py-1.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 font-medium transition-all duration-200 disabled:opacity-50"
+                      className="text-xs px-3 py-1.5 bg-slate-600 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-700 font-medium transition-all duration-200 disabled:opacity-50"
                       title="Submit 2 fake edge node results"
                     >
                       {simulateMutation.isPending ? '...' : 'Simulate Round'}
@@ -188,7 +188,7 @@ export default function JobsPage() {
                 {job.status !== 'RUNNING' && (
                   <button
                     onClick={e => { e.stopPropagation(); setPendingDeleteId(job.id) }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 transition-all duration-200"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
                     title="Delete job"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -197,30 +197,30 @@ export default function JobsPage() {
               </div>
 
               {expanded === job.id && (
-                <div className="border-t border-slate-100 px-5 py-4 bg-slate-50/50 text-xs text-slate-600 space-y-2">
+                <div className="border-t border-slate-100 dark:border-slate-700 px-5 py-4 bg-slate-50/50 dark:bg-slate-900/50 text-xs text-slate-600 dark:text-slate-300 space-y-2">
                   <p>
-                    <strong className="text-slate-700">ID:</strong>{' '}
-                    <code className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{job.id}</code>
+                    <strong className="text-slate-700 dark:text-slate-200">ID:</strong>{' '}
+                    <code className="font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{job.id}</code>
                   </p>
                   <p>
-                    <strong className="text-slate-700">Cohort:</strong>{' '}
+                    <strong className="text-slate-700 dark:text-slate-200">Cohort:</strong>{' '}
                     {job.cohort_definition_id
                       ? getCohortLabel(job) !== null
                         ? getCohortLabel(job)
-                        : <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Cohort deleted</span>
+                        : <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Cohort deleted</span>
                       : '—'
                     }
                   </p>
                   <p>
-                    <strong className="text-slate-700">Params:</strong>{' '}
-                    <code className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{JSON.stringify(job.params)}</code>
+                    <strong className="text-slate-700 dark:text-slate-200">Params:</strong>{' '}
+                    <code className="font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{JSON.stringify(job.params)}</code>
                   </p>
-                  {job.started_at && <p><strong className="text-slate-700">Started:</strong> {new Date(job.started_at).toLocaleString()}</p>}
-                  {job.finished_at && <p><strong className="text-slate-700">Finished:</strong> {new Date(job.finished_at).toLocaleString()}</p>}
+                  {job.started_at && <p><strong className="text-slate-700 dark:text-slate-200">Started:</strong> {new Date(job.started_at).toLocaleString()}</p>}
+                  {job.finished_at && <p><strong className="text-slate-700 dark:text-slate-200">Finished:</strong> {new Date(job.finished_at).toLocaleString()}</p>}
                   {job.result_summary && (
-                    <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
-                      <p className="font-semibold text-slate-700 mb-2">Result Summary</p>
-                      <pre className="whitespace-pre-wrap text-slate-600 font-mono">{JSON.stringify(job.result_summary, null, 2)}</pre>
+                    <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <p className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Result Summary</p>
+                      <pre className="whitespace-pre-wrap text-slate-600 dark:text-slate-300 font-mono">{JSON.stringify(job.result_summary, null, 2)}</pre>
                     </div>
                   )}
                 </div>
@@ -230,10 +230,10 @@ export default function JobsPage() {
         })}
 
         {jobs.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <Activity className="h-12 w-12 mb-3 text-slate-300" />
-            <p className="text-sm font-medium text-slate-500">No jobs yet</p>
-            <p className="text-xs text-slate-400 mt-1">Create your first federated ML job</p>
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
+            <Activity className="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600" />
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No jobs yet</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Create your first federated ML job</p>
           </div>
         )}
       </div>
