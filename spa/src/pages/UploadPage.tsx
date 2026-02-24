@@ -63,9 +63,9 @@ export default function UploadPage() {
         >
           <div className="flex flex-col items-center">
             <Upload className="h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-1">Húzd ide a DICOM fájlokat</p>
-            <p className="text-sm text-slate-400 dark:text-slate-500">vagy kattints a tallózáshoz</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">.dcm fájlok</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-1">Drag DICOM files here</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500">or click to browse</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">.dcm files</p>
           </div>
           <input
             id="file-input"

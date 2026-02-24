@@ -1,15 +1,43 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Sun, Moon, ExternalLink, Monitor, Server, Activity, Database, BarChart2, Heart } from 'lucide-react'
+import { X, Sun, Moon, ExternalLink, Server, Activity } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
-const SERVICES = [
-  { name: 'SPA',        url: 'http://localhost:3000',       Icon: Monitor,   color: 'text-sky-500'    },
-  { name: 'Core API',   url: 'http://localhost:8001/docs',  Icon: Server,    color: 'text-teal-500'   },
-  { name: 'ML API',     url: 'http://localhost:8002/docs',  Icon: Activity,  color: 'text-violet-500' },
-  { name: 'Orthanc',    url: 'http://localhost:8042',       Icon: Heart,     color: 'text-rose-500'   },
-  { name: 'Prometheus', url: 'http://localhost:9090',       Icon: Database,  color: 'text-orange-500' },
-  { name: 'Grafana',    url: 'http://localhost:3001',       Icon: BarChart2, color: 'text-yellow-500' },
+// Devicons CDN — reliable colored SVG logos
+const PROMETHEUS_LOGO = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg'
+const GRAFANA_LOGO    = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/grafana/grafana-original.svg'
+const POSTGRES_LOGO   = 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg'
+const ORTHANC_LOGO    = 'https://www.orthanc-server.com/img/Carousel/1-Logo.png'
+const EGROUP_LOGO     = 'https://www.egroup.hu/wp-content/uploads/2021/03/E-Group-feh%C3%A9r-transzparens-bkg.png'
+
+// DBeaver deep-link: opens a connection directly to our PostgreSQL DB
+const DBEAVER_URL =
+  'dbeaver://open?driver=postgresql&host=localhost&port=5432&database=dcmdb&user=dcm&password=dcm'
+
+type IconService = {
+  type: 'icon'
+  name: string
+  url: string
+  Icon: React.ComponentType<{ className?: string }>
+  color: string
+}
+
+type ImgService = {
+  type: 'img'
+  name: string
+  url: string
+  logo: string
+}
+
+type ServiceEntry = IconService | ImgService
+
+const SERVICES: ServiceEntry[] = [
+  { type: 'icon', name: 'Core API',   url: 'http://localhost:8001/docs', Icon: Server,   color: 'text-teal-500'   },
+  { type: 'icon', name: 'ML API',     url: 'http://localhost:8002/docs', Icon: Activity, color: 'text-violet-500' },
+  { type: 'img',  name: 'Orthanc',    url: 'http://localhost:8042',       logo: ORTHANC_LOGO    },
+  { type: 'img',  name: 'Prometheus', url: 'http://localhost:9090',       logo: PROMETHEUS_LOGO },
+  { type: 'img',  name: 'Grafana',    url: 'http://localhost:3001',       logo: GRAFANA_LOGO    },
+  { type: 'img',  name: 'PostgreSQL', url: DBEAVER_URL,                   logo: POSTGRES_LOGO   },
 ]
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -67,12 +95,29 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
                 DICOM Federated ML Platform — proof of concept for privacy-preserving medical imaging AI.
               </p>
               <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-400 dark:text-slate-500">Developed by</p>
-                <p className="text-sm font-semibold text-teal-600 dark:text-teal-400 mt-0.5">EGroup ICT</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                  EGroup ICT is a Hungarian IT solutions provider specializing in enterprise infrastructure,
-                  cloud services, cybersecurity, and digital transformation. With over 30 years of experience,
-                  they deliver innovative technology solutions to organizations across Central Europe.
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Developed by</p>
+                <a
+                  href="https://www.egroup.hu/hu/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2.5 group"
+                >
+                  {/* White E-Group logo on teal pill background */}
+                  <span className="inline-flex items-center justify-center rounded-lg bg-teal-600 group-hover:bg-teal-700 transition-colors duration-200 px-3 py-1.5">
+                    <img
+                      src={EGROUP_LOGO}
+                      alt="E-Group"
+                      className="h-4 w-auto object-contain"
+                    />
+                  </span>
+                  <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 group-hover:underline">
+                    E-Group
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:text-teal-400 transition-colors duration-200" />
+                </a>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
+                  Hungarian IT solutions provider specializing in enterprise infrastructure,
+                  cloud services, cybersecurity, and digital transformation.
                 </p>
               </div>
             </div>
@@ -116,17 +161,25 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
           <section>
             <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Services</h3>
             <div className="grid grid-cols-2 gap-3">
-              {SERVICES.map(({ name, url, Icon, color }) => (
+              {SERVICES.map((svc) => (
                 <a
-                  key={name}
-                  href={url}
+                  key={svc.name}
+                  href={svc.url}
                   target="_blank"
                   rel="noreferrer"
                   className="group flex flex-col items-center gap-2 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50/50 dark:hover:bg-teal-900/20 transition-all duration-200 cursor-pointer no-underline"
                 >
-                  <Icon className={`h-8 w-8 ${color}`} />
+                  {svc.type === 'icon' ? (
+                    <svc.Icon className={`h-8 w-8 ${svc.color}`} />
+                  ) : (
+                    <img
+                      src={svc.logo}
+                      alt={`${svc.name} logo`}
+                      className="h-8 w-8 object-contain"
+                    />
+                  )}
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-300 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-200">
-                    {name}
+                    {svc.name}
                   </span>
                   <ExternalLink className="h-3 w-3 text-slate-300 dark:text-slate-600 group-hover:text-teal-400 transition-colors duration-200" />
                 </a>
