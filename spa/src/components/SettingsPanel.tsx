@@ -102,12 +102,12 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2.5 group"
                 >
-                  {/* White E-Group logo on teal pill background */}
-                  <span className="inline-flex items-center justify-center rounded-lg bg-teal-600 group-hover:bg-teal-700 transition-colors duration-200 px-3 py-1.5">
+                  {/* E-Group logo — white on transparent; dark pill ensures visibility in both themes */}
+                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-slate-800 dark:bg-slate-700 group-hover:bg-slate-700 dark:group-hover:bg-slate-600 transition-colors duration-200 shrink-0">
                     <img
                       src={EGROUP_LOGO}
                       alt="E-Group"
-                      className="h-4 w-auto object-contain"
+                      className="h-6 w-6 object-contain"
                     />
                   </span>
                   <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 group-hover:underline">
