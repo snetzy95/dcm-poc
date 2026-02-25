@@ -1,8 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Database, Upload, Users, Activity, Heart } from 'lucide-react'
+import { Database, Upload, Users, Activity, Heart, Settings } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-
-const EGROUP_LOGO = '/egroup-logo.png'
 
 const links = [
   { to: '/studies', label: 'Studies', Icon: Database },
@@ -39,17 +37,13 @@ export default function NavBar() {
             </NavLink>
           ))}
         </div>
-        {/* E-Group logo button — opens settings panel */}
+        {/* Settings gear icon */}
         <button
           onClick={openPanel}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors duration-200 shrink-0"
+          className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 shrink-0"
           aria-label="Open settings"
         >
-          <img
-            src={EGROUP_LOGO}
-            alt="E-Group"
-            className="h-6 w-6 object-contain"
-          />
+          <Settings className="h-5 w-5" />
         </button>
       </div>
     </nav>
