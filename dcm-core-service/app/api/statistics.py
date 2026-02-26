@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -47,14 +47,16 @@ async def get_statistics(db: AsyncSession = Depends(get_db)):
     ]
 
     # --- Studies by month (last 24 months, sorted ascending) ---
+    # Use positional GROUP BY/ORDER BY (GROUP BY 1) to avoid asyncpg re-parametrizing
+    # the same literal 'YYYY-MM' as separate bind vars which confuses PostgreSQL.
     month_result = await db.execute(
         select(
             func.to_char(Study.study_date, "YYYY-MM").label("year_month"),
             func.count().label("count"),
         )
         .where(Study.deleted_at.is_(None), Study.study_date.is_not(None))
-        .group_by(func.to_char(Study.study_date, "YYYY-MM"))
-        .order_by(func.to_char(Study.study_date, "YYYY-MM"))
+        .group_by(text("1"))
+        .order_by(text("1"))
         .limit(24)
     )
     studies_by_month = [
