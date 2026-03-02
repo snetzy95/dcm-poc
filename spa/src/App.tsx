@@ -6,6 +6,7 @@ import StudiesPage from './pages/StudiesPage'
 import UploadPage from './pages/UploadPage'
 import CohortPage from './pages/CohortPage'
 import JobsPage from './pages/JobsPage'
+import StatisticsPage from './pages/StatisticsPage'
 
 export default function App() {
   const { isPanelOpen, closePanel } = useTheme()
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/cohorts" element={<CohortPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/statistics" element={<StatisticsPage />} />
         </Routes>
       </main>
       {isPanelOpen && <SettingsPanel onClose={closePanel} />}

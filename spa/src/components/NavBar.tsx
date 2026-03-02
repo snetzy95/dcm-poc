@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Database, Upload, Users, Activity, Heart, Settings } from 'lucide-react'
+import { Database, Upload, Users, Activity, BarChart2, Heart, Settings } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 const links = [
@@ -7,6 +7,7 @@ const links = [
   { to: '/upload', label: 'Upload', Icon: Upload },
   { to: '/cohorts', label: 'Cohorts', Icon: Users },
   { to: '/jobs', label: 'ML Jobs', Icon: Activity },
+  { to: '/statistics', label: 'Statistics', Icon: BarChart2 },
 ]
 
 export default function NavBar() {

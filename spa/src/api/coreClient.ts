@@ -55,3 +55,53 @@ export const addStudyLabel = (orthancId: string, label: string) =>
 
 export const removeStudyLabel = (orthancId: string, label: string) =>
   orthancApi.delete(`/studies/${orthancId}/labels/${encodeURIComponent(label)}`)
+
+// Statistics
+export interface StatisticsTotals {
+  studies: number
+  series: number
+  instances: number
+}
+
+export interface ModalityCount {
+  modality: string
+  count: number
+}
+
+export interface InstitutionCount {
+  institution: string
+  count: number
+}
+
+export interface MonthCount {
+  year_month: string
+  count: number
+}
+
+export interface SexCount {
+  sex: string
+  count: number
+}
+
+export interface BodyPartCount {
+  body_part: string
+  count: number
+}
+
+export interface InstanceBucket {
+  bucket: string
+  count: number
+}
+
+export interface Statistics {
+  totals: StatisticsTotals
+  studies_by_modality: ModalityCount[]
+  studies_by_institution: InstitutionCount[]
+  studies_by_month: MonthCount[]
+  sex_distribution: SexCount[]
+  body_parts: BodyPartCount[]
+  instance_distribution: InstanceBucket[]
+}
+
+export const fetchStatistics = () =>
+  coreApi.get<Statistics>('/statistics').then(r => r.data)
